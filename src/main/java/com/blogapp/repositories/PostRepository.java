@@ -1,7 +1,6 @@
-package repositories;
+package com.blogapp.repositories;
 
-import models.Post;
-import org.springframework.data.domain.Page;
+import com.blogapp.models.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -1,21 +1,22 @@
-package controllers;
+package com.blogapp.controllers;
 
-import models.Post;
+import com.blogapp.models.Post;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import services.PostService;
+import com.blogapp.services.PostService;
 
 import java.util.List;
 
-@RestController
+@Controller
 @RequestMapping("/posts")
 public class PostController {
 
     private final PostService postService;
 
     @Autowired
-    private PostController(PostService postService){
+    public PostController(PostService postService){
         this.postService = postService;
     }
 

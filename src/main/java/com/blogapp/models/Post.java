@@ -1,4 +1,4 @@
-package models;
+package com.blogapp.models;
 
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;

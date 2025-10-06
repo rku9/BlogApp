@@ -1,13 +1,9 @@
-package services;
+package com.blogapp.services;
 
-import exceptions.NoPostException;
-import models.Post;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import com.blogapp.exceptions.NoPostException;
+import com.blogapp.models.Post;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.Model;
-import repositories.PostRepository;
+import com.blogapp.repositories.PostRepository;
 
 import java.util.List;
 import java.util.Optional;

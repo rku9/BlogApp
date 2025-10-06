@@ -1,4 +1,4 @@
-package exceptions;
+package com.blogapp.exceptions;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

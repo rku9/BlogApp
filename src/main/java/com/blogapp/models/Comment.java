@@ -1,4 +1,4 @@
-package models;
+package com.blogapp.models;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
