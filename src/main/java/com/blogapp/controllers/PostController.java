@@ -30,6 +30,7 @@ public class PostController {
     public String getPost(@PathVariable long id, Model model){
 
         Post post = postService.getPost(id);
+        System.out.println(post.getTitle());
         model.addAttribute("post", post);
         return "post";
     }
@@ -88,6 +89,6 @@ public class PostController {
         // Delegate the creation of post with tags to a single service
         Post savedPost = postCreationService.savePostWithTags(post, tagListString);
 
-        return "redirect:/post/" + savedPost.getId();
+        return "redirect:/post" + savedPost.getId();
     }
 }

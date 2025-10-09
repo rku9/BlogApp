@@ -5,6 +5,18 @@
     <title>Title</title>
 </head>
 <body>
-
+    <div th:if="${post != null}">
+        <h1 th:text="${post.getTitle()}">Post Title</h1>
+<!--        <small th:text="${post.getAuthor()}">Post Author</small>-->
+        <small th:text="${#temporals.format(post.createdAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd')}">Created At</small>
+        <p th:text="${post.getContent()}">Post Content</p>
+        <div>
+            <strong>Tags:</strong>
+<!--            <span th:each="tag : ${post.getTags()}" th:text="${tag}" style="margin-right: 8px;">Tag</span>-->
+        </div>
+    </div>
+    <div th:if="${post == null}">
+        <h2>Post not found</h2>
+    </div>
 </body>
 </html>
