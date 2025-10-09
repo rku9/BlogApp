@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        h1, h3 {
+            text-align: center;
+        }
+
+        body {
+            font-family: sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            width: 100%;
+            padding: 200px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+    </style>
+</head>
+<body>
+<h1>New Post</h1>
+<form th:action="@{/newpost}" th:object="${post}" method="post">
+    <label for="title">Title</label>
+    <input type="text" id="title" th:field="*{title}"  required>
+
+    <label for="tags">Tags(Comma separate for multiple tags)</label>
+    <input type="text" id="tags" name="tags" required>
+
+    <label for="content">Content</label>
+    <textarea id="content" th:field="*{content}" required></textarea>
+
+    <button type="submit">Submit</button>
+</form>
+</body>
+</html>

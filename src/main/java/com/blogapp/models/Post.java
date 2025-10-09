@@ -15,6 +15,8 @@ import java.time.Instant;
 public class Post extends BaseModel{
    private String title;
    private String excerpt;
+   
+   @Column(columnDefinition = "TEXT")
    private String content;
    private String author;
    private Instant published_at;

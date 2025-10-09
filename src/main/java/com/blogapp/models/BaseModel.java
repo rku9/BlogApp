@@ -15,13 +15,17 @@ import java.util.Date;
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 public class BaseModel {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    private Long id;
+
     @CreatedDate
-//    @Temporal(TemporalType.TIMESTAMP)
     private Instant createdAt;
+
     @LastModifiedDate
-//    @Temporal(TemporalType.TIMESTAMP)
     private Instant updatedAt;
+
+    @Column(nullable = false)
+    private boolean isDeleted = false;
 }
