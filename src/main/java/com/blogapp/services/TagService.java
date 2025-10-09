@@ -25,7 +25,7 @@ public class TagService {
         return tagNames;
     }
 
-    public List<Tag> saveTag(String tagListString){
+    public List<Tag> saveTags(String tagListString){
         String[] tagNamesArray = extractTags(tagListString);
         List<Tag> savedTags = new ArrayList<>();
 

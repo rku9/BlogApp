@@ -1,10 +1,7 @@
 package com.blogapp.controllers;
 
 import com.blogapp.models.Post;
-import com.blogapp.models.PostTag;
-import com.blogapp.models.Tag;
-import com.blogapp.services.PostTagService;
-import com.blogapp.services.TagService;
+import com.blogapp.services.PostCreationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
@@ -12,22 +9,20 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.blogapp.services.PostService;
 
-import java.util.List;
-
 @Controller
 @RequestMapping("/")
 public class PostController {
 
     private final PostService postService;
-    private final TagService tagService;
-    private final PostTagService postTagService;
+//    private final TagService tagService;
+//    private final PostTagService postTagService;
+    private final PostCreationService postCreationService;
 
     @Autowired
-    public PostController(PostService postService, TagService tagService,
-                          PostTagService postTagService){
+    public PostController(PostService postService,
+                          PostCreationService postCreationService){
         this.postService = postService;
-        this.tagService = tagService;
-        this.postTagService = postTagService;
+        this.postCreationService = postCreationService;
     }
 
     //post1
@@ -71,18 +66,28 @@ public class PostController {
         return "new-post";
     }
 
-    @PostMapping("/newpost")
-    public String handleNewPostSubmission(@ModelAttribute Post post,
-                                          @RequestParam("tags") String tagListString){
-        //pass the tagListString to the tag service, and it will save it to the
-        //tag repo and the post tag repo.
-        List<Tag> savedTag = tagService.saveTag(tagListString);
+//    @PostMapping("/newpost")
+//    public String handleNewPostSubmission(@ModelAttribute Post post,
+//                                          @RequestParam("tags") String tagListString){
+//        //pass the tagListString to the tag service, and it will save it to the
+//        //tag repo and the post tag repo.
+//        System.out.println(tagListString);
+//        List<Tag> savedTag = tagService.saveTag(tagListString);
+//
+//        //process the post object.
+//        Post savedPost = postService.savePost(post, );
+//
+//        //after the last we have the post id and the tag id.
+//        PostTag savedPostTag = postTagService.savePostTag(savedPost, savedTag);
+//        return "redirect:/post" + savedPost.getId();
+//    }
 
-        //process the post object.
-        Post savedPost = postService.savePost(post);
+        @PostMapping("/newpost")
+        public String handleNewPostSubmission(@ModelAttribute Post post,
+                                      @RequestParam("tags") String tagListString) {
+        // Delegate the creation of post with tags to a single service
+        Post savedPost = postCreationService.savePostWithTags(post, tagListString);
 
-        //after the last we have the post id and the tag id.
-        PostTag savedPostTag = postTagService.savePostTag(savedPost, savedTag);
-        return "redirect:/post" + savedPost.getId();
+        return "redirect:/post/" + savedPost.getId();
     }
 }

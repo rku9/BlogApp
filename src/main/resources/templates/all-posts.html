@@ -31,7 +31,28 @@
     </style>
 </head>
 <body>
-    <h1>My Blog Application</h1>
+
+    <div class="header">
+        <h1>My Blog Application</h1>
+<!--        <a th:href="@${/login}">Login</a> |-->
+        <form method="get" action="/">
+            <label for="tag">Filter by Tag:</label>
+            <select id="tag" name="tag">
+                <option value="">All</option>
+                <option value="Tech">Tech</option>
+                <option value="Life">Life</option>
+            </select>
+
+            <label for="author">Filter by Author:</label>
+            <select id="author" name="author">
+                <option value="">All</option>
+                <option value="Alice">Alice</option>
+                <option value="Bob">Bob</option>
+            </select>
+
+            <button type="submit">Filter</button>
+        </form>
+    </div>
     <div class="posts-container">
         <div th:each="post : ${allPosts}" class="post-card">
             <h3 th:text="${post.getTitle()}">Post Title</h3>
