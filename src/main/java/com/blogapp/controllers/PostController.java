@@ -1,5 +1,6 @@
 package com.blogapp.controllers;
 
+import com.blogapp.exceptions.NoPostException;
 import com.blogapp.models.Post;
 import com.blogapp.services.PostCreationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.blogapp.services.PostService;
+
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/")
@@ -29,9 +32,11 @@ public class PostController {
     @GetMapping("/post{id:\\d+}")
     public String getPost(@PathVariable long id, Model model){
 
-        Post post = postService.getPost(id);
-        System.out.println(post.getTitle());
-        model.addAttribute("post", post);
+        Optional<Post> optionalPost = postService.getPost(id);
+        if(optionalPost.isEmpty()){
+            throw new NoPostException("Post with the id "+id+"doesn't exist!", id);
+        }
+        model.addAttribute("post", optionalPost.get());
         return "post";
     }
 

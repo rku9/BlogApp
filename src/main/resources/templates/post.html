@@ -1,22 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title th:text="${post != null} ? ${post.getTitle()} : 'Post Not Found'">Post</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .post-card {
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .metadata {
+            font-size: 0.9em;
+            color: #777;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-    <div th:if="${post != null}">
-        <h1 th:text="${post.getTitle()}">Post Title</h1>
-<!--        <small th:text="${post.getAuthor()}">Post Author</small>-->
-        <small th:text="${#temporals.format(post.createdAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd')}">Created At</small>
-        <p th:text="${post.getContent()}">Post Content</p>
-        <div>
-            <strong>Tags:</strong>
-<!--            <span th:each="tag : ${post.getTags()}" th:text="${tag}" style="margin-right: 8px;">Tag</span>-->
-        </div>
+<div class="header">
+    <h5>My Blog Application</h5>
+    <a th:href="@{/}">Home</a> |
+    <a th:href="@{/login}">Login</a> |
+<!--    <a th:href="@{/newpost}">New Post</a>-->
+</div>
+<div th:if="${post != null}" class="post-card">
+    <h1 th:text="${post.getTitle()}">Post Title</h1>
+    <div class="metadata">
+<!--        <span th:text="${post.getAuthor()}">Author</span> |-->
+        <span th:text="${#temporals.format(post.createdAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd')}">Created At</span>
+        <span th:if="${post.publishedAt != null}">
+            | Published: <span th:text="${#temporals.format(post.publishedAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd')}"></span>
+        </span>
     </div>
-    <div th:if="${post == null}">
-        <h2>Post not found</h2>
-    </div>
+    <p th:text="${post.getContent()}">Post Content</p>
+</div>
+
+<div th:if="${post == null}">
+    <h2>Post not found</h2>
+</div>
 </body>
 </html>

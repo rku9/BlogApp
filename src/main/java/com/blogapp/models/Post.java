@@ -19,6 +19,8 @@ public class Post extends BaseModel{
    @Column(columnDefinition = "TEXT")
    private String content;
    private String author;
-   private Instant published_at;
-   private boolean is_published;
+
+
+   private Instant publishedAt;
+   private boolean isPublished;
 }

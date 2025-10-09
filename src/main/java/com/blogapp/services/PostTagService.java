@@ -17,10 +17,12 @@ public class PostTagService {
         this.postTagRepository = postTagRepository;
     }
 
-    public void savePostTag(Post post, List<Tag> tag){
-        PostTag postTag = new PostTag();
-        postTag.setPost(post);
-//        postTag.setTag(tag);
-        postTagRepository.save(postTag);
+    public void savePostTag(Post post, List<Tag> tags){
+        for(Tag tag: tags){
+            PostTag postTag = new PostTag();
+            postTag.setPost(post);
+            postTag.setTag(tag);
+            postTagRepository.save(postTag);
+        }
     }
 }
