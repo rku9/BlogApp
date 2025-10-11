@@ -1,19 +1,17 @@
 package com.blogapp.services;
-
 import com.blogapp.exceptions.NoPostException;
 import com.blogapp.models.Post;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import jakarta.transaction.Transactional;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import com.blogapp.repositories.PostRepository;
-
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Service
 public class PostService {
     private final PostRepository postRepository;
-
 
     public PostService(PostRepository postRepository) {
         this.postRepository = postRepository;
@@ -25,15 +23,6 @@ public class PostService {
 
     public Page<Post> getAllPosts(int pageNumber, int pageSize){
         return postRepository.findAll(PageRequest.of(pageNumber, pageSize));
-    }
-
-//    public Page<Post> getAllPostsCustom(int pageNumber, int pageSize){
-////        int pageNumber = start / limit;
-//        return postRepository.findAll(PageRequest.of(pageNumber, pageSize));
-//    }
-
-    public void deletePost(int id){
-        Optional<Post> currentPost = getPost(id);
     }
 
     public Post savePost(Post post){
@@ -57,5 +46,17 @@ public class PostService {
             if (i < count - 1) excerpt.append(" ");
         }
         return excerpt.toString().trim();
+    }
+
+    @Transactional
+    public void deletePost(Long id){
+        Optional<Post> currentPost = postRepository.findById(id);
+        if(currentPost.isEmpty()){
+            throw new NoPostException("Post with the id "+id+"doesn't exist!", id);
+        }
+        currentPost.get().setDeleted(true);
+//        currentPost.get()
+        currentPost.get().getComments().forEach(comment -> comment.setDeleted(true));
+        postRepository.save(currentPost.get());
     }
 }

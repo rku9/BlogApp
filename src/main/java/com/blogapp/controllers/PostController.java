@@ -2,7 +2,8 @@ package com.blogapp.controllers;
 
 import com.blogapp.exceptions.NoPostException;
 import com.blogapp.models.Post;
-import com.blogapp.services.PostCreationService;
+import com.blogapp.services.PostTagManagerService;
+import com.blogapp.services.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
@@ -17,23 +18,23 @@ import java.util.Optional;
 public class PostController {
 
     private final PostService postService;
-//    private final TagService tagService;
-//    private final PostTagService postTagService;
-    private final PostCreationService postCreationService;
+    private final PostTagManagerService postTagManagerService;
+    private final TagService tagService;
 
     @Autowired
     public PostController(PostService postService,
-                          PostCreationService postCreationService){
+                          PostTagManagerService postTagManagerService,
+                          TagService tagService) {
         this.postService = postService;
-        this.postCreationService = postCreationService;
+        this.postTagManagerService = postTagManagerService;
+        this.tagService = tagService;
     }
 
-    //post1
-    @GetMapping("/post{id:\\d+}")
-    public String getPost(@PathVariable long id, Model model){
+    @GetMapping("/post/{id}")
+    public String getPost(@PathVariable long id, Model model) {
 
         Optional<Post> optionalPost = postService.getPost(id);
-        if(optionalPost.isEmpty()){
+        if (optionalPost.isEmpty()) {
             throw new NoPostException("Post with the id "+id+"doesn't exist!", id);
         }
         model.addAttribute("post", optionalPost.get());
@@ -41,10 +42,7 @@ public class PostController {
     }
 
     @GetMapping("/")
-    public String getAllPosts(@RequestParam(name = "start",
-                                defaultValue = "0") int start,
-                              @RequestParam(name = "limit", defaultValue =
-                                      "2147483647 ") int limit,
+    public String getAllPosts(@RequestParam(value = "start", defaultValue = "0") int start,
                               Model model){
         int pageSize = 6;
         int page = start / pageSize;
@@ -54,23 +52,44 @@ public class PostController {
         return "all-posts";
     }
 
-//    @GetMapping("/")
-//    public String getAllPostsCustom(@RequestParam("start") int start, @RequestParam("limit") int limit,
-//                              Model model){
-//        List<Post> allPostsCustom = postService.getAllPostsCustom(start, limit);
-//        model.addAttribute("allPostsCustom", allPostsCustom);
-//        return "all-posts";
-//    }
 
-    public void deletePost(long id){
-
-    }
 
     @GetMapping("/newpost")
-    public String showNewPostForm(Model model){
+    public String showNewPostForm(Model model) {
         model.addAttribute("post", new Post());
         return "new-post";
     }
+
+    @PostMapping("/newpost")
+    public String handleNewPostSubmission(@ModelAttribute Post post,
+                                          @RequestParam("tagListString") String tagListString) {
+        // Delegate the creation of post with tags to a single service
+        Post savedPost = postTagManagerService.savePostAndTags(post, tagListString);
+
+        return "redirect:/post/" + savedPost.getId();
+    }
+
+    @GetMapping("/editpost/{id}")
+    public String showEditPostForm(@PathVariable Long id, Model model) {
+        Optional<Post> optionalPost = postService.getPost(id);
+        if (optionalPost.isEmpty()) {
+            throw new NoPostException("Post with the id " + id + " doesn't exist!", id);
+        }
+        model.addAttribute("post", optionalPost.get());
+        return "new-post";
+    }
+
+
+
+
+
+    @DeleteMapping("/deletepost/{id}")
+    public String deletePost(@PathVariable Long id) {
+        postTagManagerService.deletePostAndUnusedTags(id);
+        return "redirect:/";
+    }
+}
+
 
 //    @PostMapping("/newpost")
 //    public String handleNewPostSubmission(@ModelAttribute Post post,
@@ -87,13 +106,3 @@ public class PostController {
 //        PostTag savedPostTag = postTagService.savePostTag(savedPost, savedTag);
 //        return "redirect:/post" + savedPost.getId();
 //    }
-
-        @PostMapping("/newpost")
-        public String handleNewPostSubmission(@ModelAttribute Post post,
-                                      @RequestParam("tags") String tagListString) {
-        // Delegate the creation of post with tags to a single service
-        Post savedPost = postCreationService.savePostWithTags(post, tagListString);
-
-        return "redirect:/post" + savedPost.getId();
-    }
-}
