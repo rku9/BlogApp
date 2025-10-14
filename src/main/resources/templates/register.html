@@ -1,21 +1,34 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Title</title>
-</head>
-<body>
-    <form th:action="@{/register}" method="post">
-        <label for="name">Name</label>
-        <input type="text" id="name" required>
-        <label for="email">Email</label>
-        <input type="email" id="email" required>
-        <label for="password">Password</label>
-        <input type="password" id="password" required>
-        <label for="confirmPassword">Confirm Password</label>
-        <input type="password" id="confirmPassword" required>
-        <label><button type="submit">Register</button>
-        </label>
+  </head>
+  <body>
+    <h1>Create Account</h1>
+
+    <form th:action="@{/register}" method="post" th:object="${signUpRequestDto}">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" th:field="*{name}" required />
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" th:field="*{email}" required />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" th:field="*{password}" required />
+
+      <label for="confirmPassword">Confirm Password</label>
+      <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          th:field="*{confirmPassword}"
+          required />
+
+      <label><button type="submit">Register</button></label>
     </form>
-</body>
+
+    <p>Have an account? <a th:href="@{/login}">Login</a></p>
+    <div th:if="${errorMessage}" th:text="${errorMessage}"></div>
+  </body>
 </html>

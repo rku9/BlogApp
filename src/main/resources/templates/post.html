@@ -1,55 +1,138 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title th:text="${post != null} ? ${post.getTitle()} : 'Post Not Found'">Post</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 20px;
-        }
+  </head>
 
-        h1 {
-            text-align: center;
-        }
-
-        .post-card {
-            border-radius: 20px;
-            border: 1px solid #ccc;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .metadata {
-            font-size: 0.9em;
-            color: #777;
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-<body>
-<div class="header">
-    <h5>My Blog Application</h5>
-    <a th:href="@{/}">Home</a> |
-    <a th:href="@{/login}">Login</a> |
-<!--    <a th:href="@{/newpost}">New Post</a>-->
-</div>
-<div th:if="${post != null}" class="post-card">
-    <h1 th:text="${post.getTitle()}">Post Title</h1>
-    <div class="metadata">
-<!--        <span th:text="${post.getAuthor()}">Author</span> |-->
-        <span th:text="${#temporals.format(post.createdAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd')}">Created At</span>
-        <span th:if="${post.publishedAt != null}">
-            | Published: <span th:text="${#temporals.format(post.publishedAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd')}"></span>
-        </span>
+  <body>
+    <div>
+      <h5>My Blog Application</h5>
+      <a th:href="@{/}">Home</a>
+      |
+      <a th:href="@{/login}">Login</a>
+      |
     </div>
-    <p th:text="${post.getContent()}">Post Content</p>
-</div>
 
-<div th:if="${post == null}">
-    <h2>Post not found</h2>
-</div>
-</body>
+    <div th:if="${post != null || post.isDeleted() == false}">
+      <h1 th:text="${post.getTitle()}">Post Title</h1>
+
+      <div>
+        <span th:text="${post.getAuthor()}">Author</span>
+        |
+        <span
+            th:text="${#temporals.format(post.createdAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd')}"
+        >Created At</span>
+        <span th:if="${post.getTags() != null && !post.getTags().isEmpty()}">
+          |
+          Tags:
+          <span th:each="tag,iterStat : ${post.getTags()}">
+            <span th:text="${tag.name}">TagName</span>
+            <span th:if="${!iterStat.last}">, </span>
+          </span>
+        </span>
+      </div>
+
+      <p th:text="${post.getContent()}">Post Content</p>
+    </div>
+
+    <div>
+      <a th:if="${post != null}" th:href="@{/editpost/{id}(id=${post.id})}">Edit Post</a>
+    </div>
+
+    <div>
+      <form th:action="@{/deletepost/{id}(id=${post.id})}" method="post">
+        <input type="hidden" name="_method" value="delete" />
+        <button type="submit" onclick="return confirm('Are you sure?');">Delete</button>
+      </form>
+    </div>
+
+    <div>
+      <h3>Comments</h3>
+
+      <div th:if="${showComments}">
+        <div th:if="${comments != null && !comments.isEmpty()}">
+          <div th:each="comment: ${comments}">
+            <p>
+              <strong th:text="${comment.commentWriterName}">Commentator</strong>
+              <span
+                  th:text="${#temporals.format(comment.createdAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd HH:mm')}"
+              >2025-10-12 14:30</span>
+            </p>
+            <p th:text="${comment.commentContent}">Comment</p>
+            <div>
+              <div th:if="${editCommentId} != ${comment.id}">
+                <a
+                    th:href="@{/post/{postId}/comments/editcomment/{commentId}(postId=${post.id}, commentId=${comment.id})}"
+                >Edit</a>
+              </div>
+              <div th:if="${editCommentId} == ${comment.id}">
+                <form
+                    th:object="${commentForm}"
+                    th:action="@{/post/{postId}/comments/editcomment/{commentId}(postId=${post.id}, commentId=${comment.id})}"
+                    method="post">
+                  <input type="hidden" name="_method" value="patch" />
+                  <textarea th:field="*{commentContent}" required></textarea>
+                  <button type="submit">Save</button>
+                </form>
+              </div>
+            </div>
+            <div>
+              <form
+                  th:action="@{/post/{postId}/comments/deletecomment/{commentId}(postId=${post.id}, commentId=${comment.id})}"
+                  method="post">
+                <input type="hidden" name="_method" value="delete" />
+                <button type="submit" onclick="return confirm('Are you sure?');">Delete</button>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div th:if="${comments == null || comments.isEmpty()}">
+          <p>No comments yet.</p>
+        </div>
+      </div>
+
+      <div th:if="${showComments==null || showComments == false}">
+        <a th:href="@{/post/{postId}/comments(postId=${post.id})}">Show Comments</a>
+      </div>
+
+      <div>
+        <div th:if="${addComment}">
+          <form
+              th:action="@{/post/{postId}/comments/newcomment(postId=${post.id})}"
+              th:object="${comment}"
+              method="post">
+            <label for="commentWriterName">Your Name</label>
+            <input
+                id="commentWriterName"
+                type="text"
+                th:field="*{commentWriterName}"
+                placeholder="Name"
+                required />
+            <label for="email">Your Email</label>
+            <input
+                id="email"
+                type="email"
+                th:field="*{email}"
+                placeholder="Email"
+                required />
+            <label for="commentContent">Comment Content</label>
+            <textarea
+                id="commentContent"
+                th:field="*{commentContent}"
+                placeholder="Your comment"
+                required></textarea>
+            <button type="submit">Save Comment</button>
+          </form>
+        </div>
+        <div th:if="${addComment == null || addComment == false}">
+          <a th:href="@{/post/{postId}/comments/newcomment(postId=${post.id})}">Add a comment</a>
+        </div>
+      </div>
+    </div>
+
+    <div th:if="${post == null}">
+      <h2>Post not found</h2>
+    </div>
+  </body>
 </html>

@@ -1,52 +1,28 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-    <style>
-        h1, h3 {
-            text-align: center;
-        }
+  <head>
+    <meta charset="UTF-8" />
+    <title th:text="${postFormDto.id} == null ? 'New Post' : 'Edit Post'"></title>
+  </head>
+  <body>
+    <h1>New/Edit Post</h1>
+    <form
+        th:object="${postFormDto}"
+        th:action="${postFormDto.id} != null ? @{/editpost/{id}(id=${postFormDto.id})} : @{/newpost}"
+        method="post">
+      <input th:if="${postFormDto.id} != null" type="hidden" th:field="*{id}" />
+      <input th:if="${postFormDto.id} != null" type="hidden" name="_method" value="patch" />
 
-        body {
-            font-family: sans-serif;
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 20px;
-        }
+      <label for="title">Title</label>
+      <input type="text" id="title" th:field="*{title}" required />
 
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        textarea {
-            width: 100%;
-            padding: 200px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
+      <label for="tags">Tags (comma separated)</label>
+      <input type="text" id="tags" th:field="*{tagListString}" required />
 
-    </style>
-</head>
-<body>
-<h1>New Post</h1>
-<form th:action="@{/newpost}" th:object="${post}" method="post">
-    <label for="title">Title</label>
-    <input type="text" id="title" th:field="*{title}"  required>
+      <label for="content">Content</label>
+      <textarea id="content" th:field="*{content}" required></textarea>
 
-    <label for="tags">Tags(Comma separate for multiple tags)</label>
-    <input type="text" id="tags" name="tags" required>
-
-    <label for="content">Content</label>
-    <textarea id="content" th:field="*{content}" required></textarea>
-
-    <button type="submit">Submit</button>
-</form>
-</body>
+      <button type="submit" th:text="${postFormDto.id} == null ? 'Submit' : 'Update'"></button>
+    </form>
+  </body>
 </html>
