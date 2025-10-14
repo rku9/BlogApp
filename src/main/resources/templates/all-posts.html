@@ -3,73 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <title>Posts</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-        }
-
-        .posts-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4%;
-        }
-        .post-card {
-            border-radius: 20px;
-            flex: 0 0 45%;
-            border: 1px solid #ccc;
-            padding: 8px;
-            box-sizing: border-box;
-            margin: 4px;
-        }
-
-    </style>
+<!--    <style>-->
+<!--        body { font-family: sans-serif; max-width: 1000px; margin: 40px auto; padding: 20px; }-->
+<!--        h1 { text-align: center; }-->
+<!--        .posts-container { display: flex; flex-wrap: wrap; gap: 4%; }-->
+<!--        .post-card { border-radius: 20px; flex: 0 0 45%; border: 1px solid #ccc; padding: 8px; box-sizing: border-box; margin: 4px; }-->
+<!--        .filterbox { margin:16px 0; border:1px solid #eee; padding:12px; border-radius:10px; }-->
+<!--        .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:6px; }-->
+<!--    </style>-->
 </head>
 <body>
 
-    <div class="header">
-        <h1>My Blog Application</h1>
-<!--        <a th:href="@${/login}">Login</a> |-->
-        <form method="get" action="/">
-            <label for="tag">Filter by Tag:</label>
-            <select id="tag" name="tag">
-                <option value="">All</option>
-                <option value="Tech">Tech</option>
-                <option value="Life">Life</option>
-            </select>
+<div class="header">
+    <h1>My Blog Application</h1>
+</div>
+<form th:action="@{/}" method="get" class="filterbox">
+    <!-- Search -->
+    <label for="search">Search</label>
+    <input id="search" type="search" name="search" th:value="${search}" placeholder="Enter keyword">
+    <input type="hidden" name="oldSearch" th:value="${oldSearch}" />
+    <!-- Always reset to page 0 when submitting the form -->
+    <input type="hidden" name="page" value="0" />
+    <input type="hidden" name="size" th:value="${page != null ? page.size : 5}" />
 
-            <label for="author">Filter by Author:</label>
-            <select id="author" name="author">
-                <option value="">All</option>
-                <option value="Alice">Alice</option>
-                <option value="Bob">Bob</option>
-            </select>
-
-            <button type="submit">Filter</button>
-        </form>
-    </div>
-    <div class="posts-container">
-        <div th:each="post : ${allPosts}" class="post-card">
-            <h3 th:text="${post.getTitle()}">Post Title</h3>
-            <small th:text="${post.getAuthor()}">Post Author</small>
-            <small th:text="${#temporals.format(post.createdAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd')}">Created At</small>
-            <p th:text="${post.getContent()}">Post Content</p>
-        </div>
+    <!-- Tags -->
+    <div class="grid" th:each="t : ${allTags}">
+        <label>
+            <input type="checkbox" name="tagIds"
+                   th:value="${t.id}"
+                   th:checked="${selectedTagIds != null && selectedTagIds.contains(t.id)}">
+            <span th:text="${t.name}">Tag</span>
+        </label>
     </div>
 
-    <nav class="pagination">
-        <a th:if="${page.hasPrevious()}"
-           th:href="@{/(page=${page.number - 1})}"
-           rel="prev">Previous</a>
+    <!-- Authors -->
+    <div class="grid" th:each="a : ${authorOptions}">
+        <label>
+            <input type="checkbox" name="authorNames"
+                   th:value="${a}"
+                   th:checked="${selectedAuthors != null and #lists.contains(selectedAuthors, a)}">
+            <span th:text="${a}">Author</span>
+        </label>
+    </div>
 
-        <a th:if="${page.hasNext()}"
-           th:href="@{/(page=${page.number + 1})}"
-           rel="next">Next</a>
-    </nav>
+    <!-- Dates -->
+    <input type="date" id="fromDate" name="fromDate" th:value="${fromDate}">
+    <input type="date" id="toDate"   name="toDate"   th:value="${toDate}">
+
+    <button type="submit">Apply Filters</button>
+    <a th:href="@{/}">Clear All</a>
+</form>
+
+<!-- Correct null check -->
+<div class="posts-container" th:if="${allPosts != null}">
+    <a th:each="post : ${allPosts}"
+       th:href="@{/post/{id}(id=${post.id})}" class="post-card">
+        <h3 th:text="${post.title}">Post Title</h3>
+        <small th:text="${post.author != null ? post.author : 'Unknown'}">Author</small>
+        <small th:text="${#dates.format(post.createdAt, 'yyyy-MM-dd')}">Created</small>
+        <p th:text="${post.content}">Post Content</p>
+    </a>
+</div>
+
+<div th:if="${allPosts == null or allPosts.isEmpty()}">
+    <h2>No posts found</h2>
+</div>
+
+<!-- Pagination -->
+<div th:if="${page != null}">
+    <ul style="list-style:none; padding:0; display:flex; gap:8px; align-items:center;">
+        <li th:if="${page.hasPrevious()}">
+            <a th:href="@{/(search=${search},oldSearch=${oldSearch},
+                     authorNames=${selectedAuthors},tagIds=${selectedTagIds},
+                     fromDate=${fromDate},toDate=${toDate},
+                     page=${page.number-1},size=${page.size})}">Prev</a>
+        </li>
+
+        <li>Page <span th:text="${page.number + 1}"></span> of <span th:text="${page.totalPages}"></span></li>
+
+        <li th:if="${page.hasNext()}">
+            <a th:href="@{/(search=${search},oldSearch=${oldSearch},
+                     authorNames=${selectedAuthors},tagIds=${selectedTagIds},
+                     fromDate=${fromDate},toDate=${toDate},
+                     page=${page.number+1},size=${page.size})}">Next</a>
+        </li>
+    </ul>
+</div>
+
+
 </body>
 </html>
