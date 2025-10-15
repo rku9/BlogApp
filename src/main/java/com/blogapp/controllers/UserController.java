@@ -1,6 +1,6 @@
 package com.blogapp.controllers;
 
-import com.blogapp.dtos.LoginRequestDto;
+import com.blogapp.trash.LoginRequestDto;
 import com.blogapp.dtos.SignUpRequestDto;
 import com.blogapp.services.UserService;
 import org.springframework.stereotype.Controller;

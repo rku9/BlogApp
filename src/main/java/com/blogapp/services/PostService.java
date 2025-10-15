@@ -1,18 +1,29 @@
 package com.blogapp.services;
 
+import com.blogapp.dtos.PostFormDto;
+import com.blogapp.dtos.PostParamFilterDto;
 import com.blogapp.exceptions.NoPostException;
 import com.blogapp.models.Post;
 import com.blogapp.models.Tag;
+import com.blogapp.models.User;
 import com.blogapp.repositories.PostRepository;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Service layer handling core post operations. */
 @Service
@@ -51,11 +62,140 @@ public class PostService {
     return postRepository.findById(id);
   }
 
+  /** Prepare model attributes for a post view. */
+  public String getPost(long id, Model model) {
+    Post post =
+        getPost(id)
+            .orElseThrow(() -> new NoPostException("Post with the id " + id + "doesn't exist!", id));
+    model.addAttribute("post", post);
+    return "post";
+  }
+
+  /** Prepare model attributes for the all-posts view. */
+  public String getAllPosts(
+      Pageable pageable,
+      PostParamFilterDto postParamFilterDto,
+      RedirectAttributes redirectAttributes,
+      Model model) {
+
+    normalizeFilters(postParamFilterDto);
+
+    String redirect = redirectIfKeywordChanged(postParamFilterDto, pageable, redirectAttributes);
+    if (redirect != null) {
+      return redirect;
+    }
+
+    List<String> sanitizedAuthors = sanitizeAuthors(postParamFilterDto.getAuthorNames());
+    List<Long> sanitizedTagIds = sanitizeTagIds(postParamFilterDto.getTagIds());
+    postParamFilterDto.setAuthorNames(sanitizedAuthors);
+    postParamFilterDto.setTagIds(sanitizedTagIds);
+    Instant fromInstant = resolveFromDateToInstant(postParamFilterDto.getFromDate());
+    Instant toInstant = resolveToDateToInstant(postParamFilterDto.getToDate());
+
+    Sort sort = Sort.by("publishedAt");
+    if ("ASC".equalsIgnoreCase(postParamFilterDto.getDirection())) {
+      sort = sort.ascending();
+      postParamFilterDto.setDirection("ASC");
+    } else {
+      sort = sort.descending();
+      postParamFilterDto.setDirection("DESC");
+    }
+
+    Pageable sortedPageable =
+        PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+
+    Page<Post> postPage =
+        searchPosts(
+            sanitizedAuthors,
+            sanitizedTagIds,
+            postParamFilterDto.getSearch(),
+            fromInstant,
+            toInstant,
+            sortedPageable);
+
+    Set<String> authors = getDistinctAuthors();
+    Set<Tag> allTags = tagService.findAllTags();
+
+    model.addAttribute("allPosts", postPage.getContent());
+    model.addAttribute("page", postPage);
+    model.addAttribute("authorOptions", authors);
+    model.addAttribute("selectedAuthors", postParamFilterDto.getAuthorNames());
+    model.addAttribute("allTags", allTags);
+    model.addAttribute("selectedTagIds", postParamFilterDto.getTagIds());
+    model.addAttribute("search", postParamFilterDto.getSearch());
+    model.addAttribute("fromDate", postParamFilterDto.getFromDate());
+    model.addAttribute("toDate", postParamFilterDto.getToDate());
+    model.addAttribute("pageable", sortedPageable);
+    model.addAttribute("direction", postParamFilterDto.getDirection());
+    model.addAttribute("sort", "publishedAt");
+    model.addAttribute("oldSearch", postParamFilterDto.getOldSearch());
+    model.addAttribute("filters", postParamFilterDto);
+
+    return "all-posts";
+  }
+
+  /** Prepare model for the new post form. */
+  public String showNewPostForm(Model model) {
+    if (!model.containsAttribute("postFormDto")) {
+      model.addAttribute("postFormDto", new PostFormDto());
+    }
+    return "new-post";
+  }
+
+  /** Persist a new post and return the redirect location. */
+  public String savePost(PostFormDto postFormDto, String tagListString, User author) {
+    Post post = new Post();
+    post.setTitle(postFormDto.getTitle());
+    post.setContent(postFormDto.getContent());
+    post.setAuthor(author);
+    Post savedPost = savePostWithTags(post, tagListString);
+    return "redirect:/post/" + savedPost.getId();
+  }
+
+  /** Prepare model for the edit post form. */
+  public String showEditPostForm(Long id, Model model) {
+    Post post =
+        getPost(id)
+            .orElseThrow(
+                () -> new NoPostException("Post with the id " + id + " doesn't exist!", id));
+
+    PostFormDto postFormDto = new PostFormDto();
+    postFormDto.setId(post.getId());
+    postFormDto.setTitle(post.getTitle());
+    postFormDto.setContent(post.getContent());
+    postFormDto.setTagListString(post.convertSetOfTagToString(post.getTags()));
+    if (post.getAuthor() != null) {
+      postFormDto.setAuthorId(post.getAuthor().getId());
+    }
+
+    model.addAttribute("postFormDto", postFormDto);
+    return "new-post";
+  }
+
+  /** Update an existing post with provided form data. */
+  public String editPost(Long id, PostFormDto postFormDto, User newAuthor) {
+    updatePostWithTags(
+        id,
+        postFormDto.getTitle(),
+        postFormDto.getContent(),
+        postFormDto.getTagListString(),
+        newAuthor);
+    return "redirect:/post/" + id;
+  }
+
+  /** Delete a post and return the redirect location. */
+  public String deletePost(Long id) {
+    deletePostAndCleanup(id);
+    return "redirect:/";
+  }
+
   /** Persist a post, enriching it with excerpt, author and published timestamp if needed. */
   public Post savePost(Post post) {
     String excerpt = getExcerpt(post.getContent());
     post.setExcerpt(excerpt);
-    post.setAuthor("Rajat");
+    if (post.getAuthor() == null) {
+      throw new IllegalArgumentException("Author must be set before saving the post");
+    }
     if (post.getPublishedAt() == null) {
       post.setPublishedAt(Instant.now());
       post.setPublished(true);
@@ -93,7 +233,8 @@ public class PostService {
 
   /** Update an existing post and reconcile its associated tags. */
   @Transactional
-  public void updatePostWithTags(Long postId, String title, String content, String tagListString) {
+  public void updatePostWithTags(
+      Long postId, String title, String content, String tagListString, User newAuthor) {
     Post existingPost =
         postRepository
             .findById(postId)
@@ -102,7 +243,9 @@ public class PostService {
     Set<Tag> oldTags = existingPost.getTags();
     existingPost.setTitle(title);
     existingPost.setContent(content);
-    existingPost.setAuthor("Rajat");
+    if (newAuthor != null) {
+      existingPost.setAuthor(newAuthor);
+    }
     Set<Tag> tags = tagService.saveTags(tagListString);
     existingPost.setTags(tags);
 
@@ -124,5 +267,82 @@ public class PostService {
     post.setDeleted(true);
     commentService.deleteCommentsByPostId(id);
     postRepository.save(post);
+  }
+
+  private void normalizeFilters(PostParamFilterDto filters) {
+    if (filters.getSearch() == null) {
+      filters.setSearch("");
+    }
+    if (filters.getOldSearch() == null) {
+      filters.setOldSearch("");
+    }
+    if (filters.getDirection() == null || filters.getDirection().isBlank()) {
+      filters.setDirection("DESC");
+    }
+    filters.setSort("publishedAt");
+  }
+
+  private String redirectIfKeywordChanged(
+      PostParamFilterDto filters, Pageable pageable, RedirectAttributes redirectAttributes) {
+    if (!Objects.equals(filters.getSearch(), filters.getOldSearch())) {
+      redirectAttributes.addAttribute("search", filters.getSearch());
+      redirectAttributes.addAttribute("oldSearch", filters.getSearch());
+      redirectAttributes.addAttribute("page", 0);
+      redirectAttributes.addAttribute("size", pageable.getPageSize());
+      redirectAttributes.addAttribute("direction", filters.getDirection());
+      return "redirect:/";
+    }
+    return null;
+  }
+
+  private List<String> sanitizeAuthors(List<String> authorNames) {
+    if (authorNames == null) {
+      return null;
+    }
+    List<String> cleaned = new ArrayList<>();
+    for (String authorName : authorNames) {
+      if (authorName == null) {
+        continue;
+      }
+      String trimmed = authorName.trim();
+      if (trimmed.isEmpty()) {
+        continue;
+      }
+      cleaned.add(trimmed);
+    }
+    if (cleaned.isEmpty()) {
+      return null;
+    }
+    return cleaned;
+  }
+
+  private List<Long> sanitizeTagIds(List<Long> tagIds) {
+    if (tagIds == null) {
+      return null;
+    }
+    List<Long> cleaned = new ArrayList<>();
+    for (Long tagId : tagIds) {
+      if (tagId != null) {
+        cleaned.add(tagId);
+      }
+    }
+    if (cleaned.isEmpty()) {
+      return null;
+    }
+    return cleaned;
+  }
+
+  private Instant resolveFromDateToInstant(LocalDate fromDate) {
+    if (fromDate == null) {
+      return null;
+    }
+    return fromDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+  }
+
+  private Instant resolveToDateToInstant(LocalDate toDate) {
+    if (toDate == null) {
+      return null;
+    }
+    return toDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
   }
 }

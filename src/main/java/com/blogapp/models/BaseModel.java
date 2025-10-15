@@ -1,14 +1,13 @@
 package com.blogapp.models;
 
 import jakarta.persistence.*;
+import java.time.Instant;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.Instant;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -16,16 +15,17 @@ import java.util.Date;
 @EntityListeners(AuditingEntityListener.class)
 public class BaseModel {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Setter(AccessLevel.NONE)
+  private Long id;
 
-    @CreatedDate
-    private Instant createdAt;
+  @CreatedDate
+  @Column(updatable = false)
+  private Instant createdAt;
 
-    @LastModifiedDate
-    private Instant updatedAt;
+  @LastModifiedDate private Instant updatedAt;
 
-    @Column(nullable = false)
-    private boolean isDeleted = false;
+  @Column(name = "is_deleted", nullable = false)
+  private boolean deleted = false;
 }

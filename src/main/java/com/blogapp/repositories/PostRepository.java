@@ -21,17 +21,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       value =
           "select distinct p "
               + "from Post p "
+              + "join p.author a "
               + "left join p.tags t "
               + "left join p.comments c "
               + "where ("
               + "lower(p.title) like lower(concat('%', :search, '%')) "
               + "or lower(p.content) like lower(concat('%', :search, '%')) "
               + "or lower(p.excerpt) like lower(concat('%', :search, '%')) "
-              + "or lower(p.author) like lower(concat('%', :search, '%')) "
+              + "or lower(a.name) like lower(concat('%', :search, '%')) "
               + "or lower(t.name) like lower(concat('%', :search, '%')) "
               + "or lower(c.commentContent) like lower(concat('%', :search, '%'))"
               + ") "
-              + "and (:authorNames is null or p.author in :authorNames) "
+              + "and (:authorNames is null or a.name in :authorNames) "
               + "and (:tagIds is null or t.id in :tagIds) "
               + "and (cast(:fromDate as timestamp) is null or p.publishedAt >= :fromDate) "
               + "and (cast(:toDate as timestamp) is null or p.publishedAt <= :toDate) "
@@ -40,17 +41,18 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       countQuery =
           "select count(distinct p) "
               + "from Post p "
+              + "join p.author a "
               + "left join p.tags t "
               + "left join p.comments c "
               + "where ("
               + "lower(p.title) like lower(concat('%', :search, '%')) "
               + "or lower(p.content) like lower(concat('%', :search, '%')) "
               + "or lower(p.excerpt) like lower(concat('%', :search, '%')) "
-              + "or lower(p.author) like lower(concat('%', :search, '%')) "
+              + "or lower(a.name) like lower(concat('%', :search, '%')) "
               + "or lower(t.name) like lower(concat('%', :search, '%')) "
               + "or lower(c.commentContent) like lower(concat('%', :search, '%'))"
               + ") "
-              + "and (:authorNames is null or p.author in :authorNames) "
+              + "and (:authorNames is null or a.name in :authorNames) "
               + "and (:tagIds is null or t.id in :tagIds) "
               + "and (cast(:fromDate as timestamp) is null or p.publishedAt >= :fromDate) "
               + "and (cast(:toDate as timestamp) is null or p.publishedAt <= :toDate) "
@@ -65,7 +67,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
       @Param("tagCount") long tagCount,
       Pageable pageable);
 
-  @Query("select distinct p.author from Post p")
+  @Query("select distinct p.author.name from Post p where p.author is not null")
   Set<String> findDistinctAuthors();
 
   Optional<Post> getPostById(Long id);

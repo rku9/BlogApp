@@ -6,8 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PostFormDto {
-    private Long id;
-    private String title;
-    private String content;
-    private String tagListString;
+  private Long id;
+  private String title;
+  private String content;
+  private String tagListString;
+  private Long authorId;
 }
