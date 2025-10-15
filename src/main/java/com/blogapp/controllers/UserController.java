@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/")
@@ -20,24 +21,12 @@ public class UserController {
   }
 
   @GetMapping("/login")
-  public String login(Model model) {
+  public String login(Model model, @RequestParam(value = "error", required = false) String error) {
     model.addAttribute("loginRequestDto", new LoginRequestDto());
-    return "login";
-  }
-
-  @PostMapping("/login")
-  public String login(LoginRequestDto loginRequestDto, Model model) {
-    String email = loginRequestDto.getEmail();
-    String password = loginRequestDto.getPassword();
-
-    try {
-      userService.login(email, password);
-      return "redirect:/";
-    } catch (IllegalArgumentException e) {
-      model.addAttribute("errorMessage", e.getMessage());
-      model.addAttribute("loginRequestDto", loginRequestDto);
-      return "login";
+    if (error != null) {
+      model.addAttribute("errorMessage", "Invalid email or password");
     }
+    return "login";
   }
 
   @GetMapping("/register")
@@ -52,9 +41,10 @@ public class UserController {
     String email = signUpRequestDto.getEmail();
     String password = signUpRequestDto.getPassword();
     String confirmPassword = signUpRequestDto.getConfirmPassword();
+    var userRole = signUpRequestDto.getUserRole();
 
     try {
-      userService.register(name, email, password, confirmPassword);
+      userService.register(name, email, password, confirmPassword, userRole);
       return "redirect:/";
     } catch (IllegalArgumentException e) {
       model.addAttribute("errorMessage", e.getMessage());

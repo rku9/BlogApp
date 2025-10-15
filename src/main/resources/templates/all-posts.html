@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
   <head>
     <meta charset="UTF-8" />
     <title>Posts</title>
@@ -7,6 +7,20 @@
   <body>
     <div>
       <h1>My Blog Application</h1>
+      <span sec:authorize="isAuthenticated()" style="float: right;">
+        Logged in as
+        <strong sec:authentication="principal.name">User</strong>
+      </span>
+      <span sec:authorize="!isAuthenticated()">
+        <a th:href="@{/login}">Login</a>
+      </span>
+      <span sec:authorize="isAuthenticated()">
+        <a th:href="@{/newpost}" sec:authorize="hasAnyAuthority('ROLE_AUTHOR','ROLE_ADMIN')">New Post</a>
+        |
+        <form th:action="@{/logout}" method="post">
+          <button type="submit">Logout</button>
+        </form>
+      </span>
     </div>
 
     <form th:action="@{/}" method="get">
@@ -20,7 +34,7 @@
       />
       <input type="hidden" name="oldSearch" th:value="${oldSearch}" />
       <input type="hidden" name="page" value="0" />
-      <input type="hidden" name="size" th:value="${page != null ? page.size : 5}" />
+      <input type="hidden" name="size" th:value="${page != null ? page.size : 10}" />
 
       <div th:each="t : ${allTags}">
         <label>
@@ -61,11 +75,25 @@
     </form>
 
     <div th:if="${allPosts != null}">
-      <a th:each="post : ${allPosts}" th:href="@{/post/{id}(id=${post.id})}">
+      <a
+          th:each="post : ${allPosts}"
+          th:href="@{/post/{id}(id=${post.id})}">
         <h3 th:text="${post.title}">Post Title</h3>
-        <small th:text="${post.author != null ? post.author : 'Unknown'}">Author</small>
-        <small th:text="${#dates.format(post.createdAt, 'yyyy-MM-dd')}">Created</small>
-        <p th:text="${post.content}">Post Content</p>
+        <div>
+          <small th:text="${post.author != null ? post.author.name : 'Unknown Author'}">Author</small>
+          <span> | </span>
+          <small
+              th:text="${post.publishedAt != null ? #temporals.format(post.publishedAt.atZone(T(java.time.ZoneId).systemDefault()), 'yyyy-MM-dd HH:mm') : 'Unpublished'}"
+          >Published</small>
+        </div>
+        <p th:text="${post.excerpt}">Post excerpt</p>
+        <div th:if="${post.tags != null && !post.tags.isEmpty()}">
+          <small>Tags: </small>
+          <span th:each="tag,iterStat : ${post.tags}">
+            <span th:text="${tag.name}">Tag</span>
+            <span th:if="${!iterStat.last}">, </span>
+          </span>
+        </div>
       </a>
     </div>
 

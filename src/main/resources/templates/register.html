@@ -25,6 +25,12 @@
           th:field="*{confirmPassword}"
           required />
 
+      <label for="userRole">Role</label>
+      <select id="userRole" name="userRole" th:field="*{userRole}" required>
+        <option th:value="${T(com.blogapp.models.Role).AUTHOR}">Author</option>
+        <option th:value="${T(com.blogapp.models.Role).ADMIN}">Admin</option>
+      </select>
+
       <label><button type="submit">Register</button></label>
     </form>
 
