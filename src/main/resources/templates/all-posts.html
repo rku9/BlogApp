@@ -3,6 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <title>Posts</title>
+    <style>
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin: 8px 0;
+      }
+
+      .filters label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .posts {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .post-card {
+        display: block;
+        padding: 16px;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        text-decoration: none;
+        color: inherit;
+      }
+    </style>
   </head>
   <body>
     <div>
@@ -10,9 +40,11 @@
       <span sec:authorize="isAuthenticated()" style="float: right;">
         Logged in as
         <strong sec:authentication="principal.name">User</strong>
+<!--          <strong sec:authentication="principal.password">User</strong>-->
       </span>
-      <span sec:authorize="!isAuthenticated()">
+      <span sec:authorize="!isAuthenticated()" style="display: inline-flex; gap: 8px;">
         <a th:href="@{/login}">Login</a>
+        <a th:href="@{/register}">Register</a>
       </span>
       <span sec:authorize="isAuthenticated()">
         <a th:href="@{/newpost}" sec:authorize="hasAnyAuthority('ROLE_AUTHOR','ROLE_ADMIN')">New Post</a>
@@ -34,10 +66,11 @@
       />
       <input type="hidden" name="oldSearch" th:value="${oldSearch}" />
       <input type="hidden" name="page" value="0" />
-      <input type="hidden" name="size" th:value="${page != null ? page.size : 10}" />
+      <input type="hidden" name="size" th:value="${page != null ? page.size : 10}" /><br />
 
-      <div th:each="t : ${allTags}">
-        <label>
+      <div class="filters">
+        <strong>Tags</strong>
+        <label th:each="t : ${allTags}">
           <input
             type="checkbox"
             name="tagIds"
@@ -48,8 +81,9 @@
         </label>
       </div>
 
-      <div th:each="a : ${authorOptions}">
-        <label>
+      <div class="filters">
+        <strong>Authors</strong>
+        <label th:each="a : ${authorOptions}">
           <input
             type="checkbox"
             name="authorNames"
@@ -74,8 +108,9 @@
       <a th:href="@{/}">Clear All</a>
     </form>
 
-    <div th:if="${allPosts != null}">
+    <div class="posts" th:if="${allPosts != null}">
       <a
+          class="post-card"
           th:each="post : ${allPosts}"
           th:href="@{/post/{id}(id=${post.id})}">
         <h3 th:text="${post.title}">Post Title</h3>
