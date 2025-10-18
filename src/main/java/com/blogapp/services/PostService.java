@@ -71,19 +71,18 @@ public class PostService {
     return "post";
   }
 
-  /** Prepare model attributes for the all-posts view. */
-  public String getAllPosts(
+  /** Determine if a keyword change requires redirecting the page. */
+  public String resolveRedirectForAllPosts(
       Pageable pageable,
       PostParamFilterDto postParamFilterDto,
-      RedirectAttributes redirectAttributes,
-      Model model) {
-
+      RedirectAttributes redirectAttributes) {
     normalizeFilters(postParamFilterDto);
+    return redirectIfKeywordChanged(postParamFilterDto, pageable, redirectAttributes);
+  }
 
-    String redirect = redirectIfKeywordChanged(postParamFilterDto, pageable, redirectAttributes);
-    if (redirect != null) {
-      return redirect;
-    }
+  /** Fetch paginated posts honoring filter parameters. */
+  public Page<Post> getAllPosts(Pageable pageable, PostParamFilterDto postParamFilterDto) {
+    normalizeFilters(postParamFilterDto);
 
     List<String> sanitizedAuthors = sanitizeAuthors(postParamFilterDto.getAuthorNames());
     List<Long> sanitizedTagIds = sanitizeTagIds(postParamFilterDto.getTagIds());
@@ -104,34 +103,17 @@ public class PostService {
     Pageable sortedPageable =
         PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
-    Page<Post> postPage =
-        searchPosts(
-            sanitizedAuthors,
-            sanitizedTagIds,
-            postParamFilterDto.getSearch(),
-            fromInstant,
-            toInstant,
-            sortedPageable);
+    return searchPosts(
+        sanitizedAuthors,
+        sanitizedTagIds,
+        postParamFilterDto.getSearch(),
+        fromInstant,
+        toInstant,
+        sortedPageable);
+  }
 
-    Set<String> authors = getDistinctAuthors();
-    Set<Tag> allTags = tagService.findAllTags();
-
-    model.addAttribute("allPosts", postPage.getContent());
-    model.addAttribute("page", postPage);
-    model.addAttribute("authorOptions", authors);
-    model.addAttribute("selectedAuthors", postParamFilterDto.getAuthorNames());
-    model.addAttribute("allTags", allTags);
-    model.addAttribute("selectedTagIds", postParamFilterDto.getTagIds());
-    model.addAttribute("search", postParamFilterDto.getSearch());
-    model.addAttribute("fromDate", postParamFilterDto.getFromDate());
-    model.addAttribute("toDate", postParamFilterDto.getToDate());
-    model.addAttribute("pageable", sortedPageable);
-    model.addAttribute("direction", postParamFilterDto.getDirection());
-    model.addAttribute("sort", "publishedAt");
-    model.addAttribute("oldSearch", postParamFilterDto.getOldSearch());
-    model.addAttribute("filters", postParamFilterDto);
-
-    return "all-posts";
+  public Set<Tag> getAllTags() {
+    return tagService.findAllTags();
   }
 
   /** Prepare model for the new post form. */
@@ -149,7 +131,7 @@ public class PostService {
     post.setContent(postFormDto.getContent());
     post.setAuthor(author);
     Post savedPost = savePostWithTags(post, tagListString);
-    return "redirect:/post/" + savedPost.getId();
+    return "redirect:/posts/" + savedPost.getId();
   }
 
   /** Prepare model for the edit post form. */
@@ -180,7 +162,7 @@ public class PostService {
         postFormDto.getContent(),
         postFormDto.getTagListString(),
         newAuthor);
-    return "redirect:/post/" + id;
+    return "redirect:/posts/" + id;
   }
 
   /** Delete a post and return the redirect location. */

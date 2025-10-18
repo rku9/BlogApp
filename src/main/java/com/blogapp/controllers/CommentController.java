@@ -11,14 +11,14 @@ import com.blogapp.services.PostService;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/post/{postId}/comments")
+@RequestMapping("/posts/{postId}/comments")
 public class CommentController {
 
   private final CommentService commentService;
@@ -31,7 +31,10 @@ public class CommentController {
   }
 
   @GetMapping
-  public String getComments(@PathVariable Long postId, Model model, Authentication authentication) {
+  public String getComments(
+      @PathVariable Long postId,
+      Model model,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     // Fetch the post
     Optional<Post> optionalPost = postService.getPost(postId);
     if (optionalPost.isEmpty()) {
@@ -44,13 +47,16 @@ public class CommentController {
     model.addAttribute("post", optionalPost.get());
     model.addAttribute("comments", comments);
     model.addAttribute("showComments", true);
-    model.addAttribute("canManageComments", canManageComments(optionalPost.get(), authentication));
+    model.addAttribute("canManageComments", canManageComments(optionalPost.get(), userDetails));
     return "post";
   }
 
   @GetMapping("/{commentId}")
   public String getCommentById(
-      @PathVariable Long postId, @PathVariable Long commentId, Model model, Authentication authentication) {
+      @PathVariable Long postId,
+      @PathVariable Long commentId,
+      Model model,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     // Verify post exists
     Optional<Post> optionalPost = postService.getPost(postId);
     if (optionalPost.isEmpty()) {
@@ -65,13 +71,15 @@ public class CommentController {
 
     model.addAttribute("post", optionalPost.get());
     model.addAttribute("comment", comment);
-    model.addAttribute("canManageComments", canManageComments(optionalPost.get(), authentication));
+    model.addAttribute("canManageComments", canManageComments(optionalPost.get(), userDetails));
     return "comment-detail"; // You'd need to create this view
   }
 
-  @GetMapping("/newcomment")
+  @GetMapping("/new")
   public String showNewCommentForm(
-      @PathVariable Long postId, Model model, Authentication authentication) {
+      @PathVariable Long postId,
+      Model model,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     // Fetch the post
     Optional<Post> optionalPost = postService.getPost(postId);
     if (optionalPost.isEmpty()) {
@@ -88,30 +96,32 @@ public class CommentController {
     model.addAttribute("addComment", true);
     // Prepare empty comment object for the form
     model.addAttribute("comment", new Comment());
-    model.addAttribute("canManageComments", canManageComments(post, authentication));
+    model.addAttribute("canManageComments", canManageComments(post, userDetails));
     return "post";
   }
 
-  @PostMapping("/newcomment")
+  @PostMapping
   public String handleNewCommentSubmission(
-      @PathVariable Long postId, @ModelAttribute Comment comment, Authentication authentication) {
+      @PathVariable Long postId,
+      @ModelAttribute Comment comment,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     // Save the new comment (commentator name, email and content are bound from form)
-    User currentUser = extractUser(authentication);
+    User currentUser = extractUser(userDetails);
     if (currentUser != null) {
       comment.setCommentWriterName(currentUser.getName());
       comment.setEmail(currentUser.getEmail());
     }
     commentService.saveComment(comment, postId, currentUser);
     // Redirect to show comments for this post
-    return "redirect:/post/" + postId + "/comments";
+    return "redirect:/posts/" + postId + "/comments";
   }
 
-  @GetMapping("/editcomment/{commentId}")
+  @GetMapping("/{commentId}/edit")
   public String showEditCommentForm(
       @PathVariable Long postId,
       @PathVariable Long commentId,
       Model model,
-      Authentication authentication) {
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     // Fetch the post
     Post post =
         postService
@@ -119,7 +129,7 @@ public class CommentController {
             .orElseThrow(
                 () ->
                     new NoPostException("Post with the id " + postId + " doesn't exist!", postId));
-    if (!canManageComments(post, authentication)) {
+    if (!canManageComments(post, userDetails)) {
       throw new AccessDeniedException("You are not allowed to manage comments for this post");
     }
     // Fetch existing comments
@@ -145,18 +155,18 @@ public class CommentController {
     return "post";
   }
 
-  @PatchMapping("/editcomment/{commentId}")
+  @PatchMapping("/{commentId}")
   public String editComment(
       @PathVariable Long postId,
       @PathVariable Long commentId,
       @ModelAttribute("commentForm") Comment updatedComment,
-      Authentication authentication) {
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     Post post =
         postService
             .getPost(postId)
             .orElseThrow(
                 () -> new NoPostException("Post with the id " + postId + " doesn't exist!", postId));
-    if (!canManageComments(post, authentication)) {
+    if (!canManageComments(post, userDetails)) {
       throw new AccessDeniedException("You are not allowed to manage comments for this post");
     }
     Comment existingComment = commentService.getCommentById(commentId);
@@ -166,19 +176,21 @@ public class CommentController {
     // Update only the content
     commentService.updateCommentContent(commentId, updatedComment.getCommentContent());
 
-    return "redirect:/post/" + postId + "/comments";
+    return "redirect:/posts/" + postId + "/comments";
   }
 
-  @DeleteMapping("/deletecomment/{commentId}")
+  @DeleteMapping("/{commentId}")
   public String deleteComment(
-      @PathVariable Long postId, @PathVariable Long commentId, Authentication authentication) {
+      @PathVariable Long postId,
+      @PathVariable Long commentId,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     // perform soft-delete via service
     Post post =
         postService
             .getPost(postId)
             .orElseThrow(
                 () -> new NoPostException("Post with the id " + postId + " doesn't exist!", postId));
-    if (!canManageComments(post, authentication)) {
+    if (!canManageComments(post, userDetails)) {
       throw new AccessDeniedException("You are not allowed to manage comments for this post");
     }
     Comment existingComment = commentService.getCommentById(commentId);
@@ -187,11 +199,11 @@ public class CommentController {
     }
     commentService.deleteComment(commentId);
     // redirect back to comments view
-    return "redirect:/post/" + postId + "/comments";
+    return "redirect:/posts/" + postId + "/comments";
   }
 
-  private boolean canManageComments(Post post, Authentication authentication) {
-    User user = extractUser(authentication);
+  private boolean canManageComments(Post post, CustomUserDetails userDetails) {
+    User user = extractUser(userDetails);
     if (user == null) {
       return false;
     }
@@ -201,14 +213,10 @@ public class CommentController {
     return post.getAuthor() != null && post.getAuthor().getId().equals(user.getId());
   }
 
-  private User extractUser(Authentication authentication) {
-    if (authentication == null || !authentication.isAuthenticated()) {
+  private User extractUser(CustomUserDetails userDetails) {
+    if (userDetails == null) {
       return null;
     }
-    Object principal = authentication.getPrincipal();
-    if (principal instanceof CustomUserDetails userDetails) {
-      return userDetails.getUser();
-    }
-    return null;
+    return userDetails.getUser();
   }
 }

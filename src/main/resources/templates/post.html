@@ -18,7 +18,7 @@
         <a th:href="@{/login}">Login</a>
       </span>
       <span sec:authorize="isAuthenticated()">
-        <a th:href="@{/newpost}" sec:authorize="hasAnyAuthority('ROLE_AUTHOR','ROLE_ADMIN')">New Post</a>
+        <a th:href="@{/posts/new}" sec:authorize="hasAnyAuthority('ROLE_AUTHOR','ROLE_ADMIN')">New Post</a>
         |
         <form th:action="@{/logout}" method="post" style="display:inline;">
           <button type="submit">Logout</button>
@@ -50,11 +50,11 @@
     </div>
 
     <div th:if="${canEditPost}">
-      <a th:href="@{/editpost/{id}(id=${post.id})}">Edit Post</a>
+      <a th:href="@{/posts/{id}/edit(id=${post.id})}">Edit Post</a>
     </div>
 
     <div th:if="${canEditPost}">
-      <form th:action="@{/deletepost/{id}(id=${post.id})}" method="post">
+      <form th:action="@{/posts/{id}(id=${post.id})}" method="post">
         <input type="hidden" name="_method" value="delete" />
         <button type="submit" onclick="return confirm('Are you sure?');">Delete</button>
       </form>
@@ -76,13 +76,13 @@
             <div th:if="${canManageComments}">
               <div th:if="${editCommentId} != ${comment.id}">
                 <a
-                    th:href="@{/post/{postId}/comments/editcomment/{commentId}(postId=${post.id}, commentId=${comment.id})}"
+                    th:href="@{/posts/{postId}/comments/{commentId}/edit(postId=${post.id}, commentId=${comment.id})}"
                 >Edit</a>
               </div>
               <div th:if="${editCommentId} == ${comment.id}">
                 <form
                     th:object="${commentForm}"
-                    th:action="@{/post/{postId}/comments/editcomment/{commentId}(postId=${post.id}, commentId=${comment.id})}"
+                    th:action="@{/posts/{postId}/comments/{commentId}(postId=${post.id}, commentId=${comment.id})}"
                     method="post">
                   <input type="hidden" name="_method" value="patch" />
                   <textarea th:field="*{commentContent}" required></textarea>
@@ -90,7 +90,7 @@
                 </form>
               </div>
               <form
-                  th:action="@{/post/{postId}/comments/deletecomment/{commentId}(postId=${post.id}, commentId=${comment.id})}"
+                  th:action="@{/posts/{postId}/comments/{commentId}(postId=${post.id}, commentId=${comment.id})}"
                   method="post">
                 <input type="hidden" name="_method" value="delete" />
                 <button type="submit" onclick="return confirm('Are you sure?');">Delete</button>
@@ -104,13 +104,13 @@
       </div>
 
       <div th:if="${showComments==null || showComments == false}">
-        <a th:href="@{/post/{postId}/comments(postId=${post.id})}">Show Comments</a>
+        <a th:href="@{/posts/{postId}/comments(postId=${post.id})}">Show Comments</a>
       </div>
 
       <div>
         <div th:if="${addComment}">
           <form
-              th:action="@{/post/{postId}/comments/newcomment(postId=${post.id})}"
+              th:action="@{/posts/{postId}/comments(postId=${post.id})}"
               th:object="${comment}"
               method="post">
             <div sec:authorize="!isAuthenticated()">
@@ -139,7 +139,7 @@
           </form>
         </div>
         <div th:if="${addComment == null || addComment == false}">
-          <a th:href="@{/post/{postId}/comments/newcomment(postId=${post.id})}">Add a comment</a>
+          <a th:href="@{/posts/{postId}/comments/new(postId=${post.id})}">Add a comment</a>
         </div>
       </div>
     </div>

@@ -1,14 +1,11 @@
 package com.blogapp.controllers;
 
-import com.blogapp.trash.LoginRequestDto;
+import com.blogapp.dtos.LoginRequestDto;
 import com.blogapp.dtos.SignUpRequestDto;
 import com.blogapp.services.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/")
@@ -36,7 +33,7 @@ public class UserController {
   }
 
   @PostMapping("/register")
-  public String registerUser(SignUpRequestDto signUpRequestDto, Model model) {
+  public String registerUser(@ModelAttribute SignUpRequestDto signUpRequestDto, Model model) {
     String name = signUpRequestDto.getName();
     String email = signUpRequestDto.getEmail();
     String password = signUpRequestDto.getPassword();

@@ -1,16 +1,25 @@
 package com.blogapp.configurations;
 
 import com.blogapp.security.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
+import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
+import org.springframework.security.config.Customizer;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
   private final CustomUserDetailsService customUserDetailsService;
@@ -23,6 +32,7 @@ public class SecurityConfig {
   }
 
   @Bean
+  @Primary
   public DaoAuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
     provider.setUserDetailsService(customUserDetailsService);
@@ -31,28 +41,32 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(HttpSecurity http, HandlerMappingIntrospector introspector) throws Exception {
+    MvcRequestMatcher apiMatcher = new MvcRequestMatcher(introspector, "/api/**");
     http.authenticationProvider(authenticationProvider())
-        .csrf(AbstractHttpConfigurer::disable)
-        .authorizeHttpRequests(
-            auth ->
-                auth
-                    .requestMatchers("/", "/login", "/register", "/css/**", "/js/**")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.GET, "/post/**")
-                    .permitAll()
-                    .requestMatchers(HttpMethod.POST, "/post/*/comments/newcomment")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated())
-        .formLogin(
-            form ->
-                form
-                    .loginPage("/login")
-                    .loginProcessingUrl("/loginabc")
-                    .defaultSuccessUrl("/", true)
-                    .failureUrl("/login?error=true")
-                    .permitAll())
+        .csrf(csrf -> csrf.ignoringRequestMatchers(apiMatcher))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/api/auth/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
+            .requestMatchers("/", "/login", "/register", "/css/**", "/js/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/posts/**").permitAll()
+            .requestMatchers(HttpMethod.POST, "/posts/*/comments").permitAll()
+            .anyRequest().authenticated())
+        .exceptionHandling(ex -> ex
+            .defaultAuthenticationEntryPointFor(
+                (request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED),
+                apiMatcher)
+            .defaultAccessDeniedHandlerFor(
+                (request, response, accessDeniedException) -> response.sendError(HttpServletResponse.SC_FORBIDDEN),
+                apiMatcher))
+        .httpBasic(Customizer.withDefaults())
+        .formLogin(form -> form
+            .loginPage("/login")
+            .loginProcessingUrl("/loginabc")
+            .defaultSuccessUrl("/", true)
+            .failureUrl("/login?error=true")
+            .permitAll())
         .logout(logout -> logout.logoutUrl("/logout").logoutSuccessUrl("/"));
     return http.build();
   }

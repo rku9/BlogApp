@@ -40,6 +40,23 @@ public class UserService {
     return userRepository.save(user);
   }
 
+  public User login(String email, String passedPassword) {
+    User user =
+        userRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
+
+    if (!bCryptPasswordEncoder.matches(passedPassword, user.getPassword())) {
+      throw new IllegalArgumentException("Invalid email or password.");
+    }
+
+    if (user.isDeleted()) {
+      throw new IllegalStateException("User account is deactivated. Contact admin to unlock it.");
+    }
+
+    return user;
+  }
+
   public Optional<User> findById(Long id) {
     return userRepository.findById(id);
   }

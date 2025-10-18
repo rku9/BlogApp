@@ -40,6 +40,8 @@ public class Post extends BaseModel {
   private boolean isPublished;
 
   public String convertSetOfTagToString(Set<Tag> tagSet) {
+      System.out.println(this.isPublished);
+//      System.out.println(this.get);
       if (tagSet == null || tagSet.isEmpty()) {
           return "";
       }
@@ -51,5 +53,7 @@ public class Post extends BaseModel {
     }
     sb.deleteCharAt(sb.length() - 1);
     return sb.toString();
+
+
   }
 }

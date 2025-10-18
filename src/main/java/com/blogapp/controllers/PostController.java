@@ -5,11 +5,14 @@ import com.blogapp.exceptions.NoPostException;
 import com.blogapp.models.*;
 import com.blogapp.security.CustomUserDetails;
 import com.blogapp.services.*;
+
 import java.util.List;
+import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -28,15 +31,15 @@ public class PostController {
     this.userService = userService;
   }
 
-  @GetMapping("/post/{id}")
-  public String getPost(@PathVariable long id, Model model, Authentication authentication) {
+  @GetMapping("/posts/{id}")
+  public String getPost(
+      @PathVariable long id, Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
     Post post =
         postService
             .getPost(id)
             .orElseThrow(() -> new NoPostException("Post with the id " + id + " doesn't exist!", id));
     model.addAttribute("post", post);
 
-    CustomUserDetails userDetails = extractUserDetails(authentication);
     boolean canEdit = false;
     if (userDetails != null) {
       boolean isAdmin = userDetails.getUser().getUserRole() == Role.ADMIN;
@@ -51,20 +54,45 @@ public class PostController {
   }
 
   /** Render paginated list of posts honoring optional filter parameters. */
-  @GetMapping("/")
+  @GetMapping
   public String getAllPosts(
       @PageableDefault(size = 10, sort = "publishedAt", direction = Sort.Direction.DESC)
           Pageable pageable,
       @ModelAttribute PostParamFilterDto postParamFilterDto,
       RedirectAttributes redirectAttributes,
       Model model) {
-    return postService.getAllPosts(pageable, postParamFilterDto, redirectAttributes, model);
+    String redirect =
+        postService.resolveRedirectForAllPosts(pageable, postParamFilterDto, redirectAttributes);
+    if (redirect != null) {
+      return redirect;
+    }
+
+    Page<Post> postPage = postService.getAllPosts(pageable, postParamFilterDto);
+    Set<String> authors = postService.getDistinctAuthors();
+    Set<Tag> allTags = postService.getAllTags();
+
+    model.addAttribute("allPosts", postPage.getContent());
+    model.addAttribute("page", postPage);
+    model.addAttribute("authorOptions", authors);
+    model.addAttribute("selectedAuthors", postParamFilterDto.getAuthorNames());
+    model.addAttribute("allTags", allTags);
+    model.addAttribute("selectedTagIds", postParamFilterDto.getTagIds());
+    model.addAttribute("search", postParamFilterDto.getSearch());
+    model.addAttribute("fromDate", postParamFilterDto.getFromDate());
+    model.addAttribute("toDate", postParamFilterDto.getToDate());
+    model.addAttribute("pageable", postPage.getPageable());
+    model.addAttribute("direction", postParamFilterDto.getDirection());
+    model.addAttribute("sort", "publishedAt");
+    model.addAttribute("oldSearch", postParamFilterDto.getOldSearch());
+    model.addAttribute("filters", postParamFilterDto);
+
+    return "all-posts";
   }
 
   /** Present a blank form for creating a new post. */
-  @GetMapping("/newpost")
-  public String showNewPostForm(Model model, Authentication authentication) {
-    CustomUserDetails userDetails = extractUserDetails(authentication);
+  @GetMapping("/posts/new")
+  public String showNewPostForm(
+      Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
     if (userDetails == null) {
       return "redirect:/login";
     }
@@ -88,12 +116,11 @@ public class PostController {
   }
 
   /** Persist a newly created post with associated tags. */
-  @PostMapping("/newpost")
+  @PostMapping("/posts")
   public String savePost(
       @ModelAttribute PostFormDto postFormDto,
       @RequestParam("tagListString") String tagListString,
-      Authentication authentication) {
-    CustomUserDetails userDetails = extractUserDetails(authentication);
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     if (userDetails == null) {
       return "redirect:/login";
     }
@@ -103,9 +130,11 @@ public class PostController {
   }
 
   /** Present the edit form populated with an existing post. */
-  @GetMapping("/editpost/{id}")
-  public String showEditPostForm(@PathVariable Long id, Model model, Authentication authentication) {
-    CustomUserDetails userDetails = extractUserDetails(authentication);
+  @GetMapping("/posts/{id}/edit")
+  public String showEditPostForm(
+      @PathVariable Long id,
+      Model model,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     if (userDetails == null) {
       return "redirect:/login";
     }
@@ -144,12 +173,11 @@ public class PostController {
   }
 
   /** Apply updates to an existing post. */
-  @PatchMapping("/editpost/{id}")
+  @PatchMapping("/posts/{id}")
   public String editPost(
       @PathVariable Long id,
       @ModelAttribute PostFormDto postFormDto,
-      Authentication authentication) {
-    CustomUserDetails userDetails = extractUserDetails(authentication);
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     if (userDetails == null) {
       return "redirect:/login";
     }
@@ -181,9 +209,9 @@ public class PostController {
   }
 
   /** Soft delete a post and redirect to the list page. */
-  @DeleteMapping("/deletepost/{id}")
-  public String deletePost(@PathVariable Long id, Authentication authentication) {
-    CustomUserDetails userDetails = extractUserDetails(authentication);
+  @DeleteMapping("/posts/{id}")
+  public String deletePost(
+      @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
     if (userDetails == null) {
       return "redirect:/login";
     }
@@ -213,18 +241,8 @@ public class PostController {
                   new IllegalArgumentException(
                       "User not found with id: " + postFormDto.getAuthorId()));
     }
+
     postFormDto.setAuthorId(currentUser.getId());
     return currentUser;
-  }
-
-  private CustomUserDetails extractUserDetails(Authentication authentication) {
-    if (authentication == null || !authentication.isAuthenticated()) {
-      return null;
-    }
-    Object principal = authentication.getPrincipal();
-    if (principal instanceof CustomUserDetails userDetails) {
-      return userDetails;
-    }
-    return null;
   }
 }
