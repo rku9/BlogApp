@@ -14,19 +14,11 @@ public interface TagRepository extends JpaRepository<Tag, Long> {
 
   Tag findByName(String name);
 
-  /**
-   * Retrieves all tags that are not marked as deleted.
-   *
-   * @return a list containing non-deleted tags
-   */
-  List<Tag> findAllByDeletedFalse();
-
   @Query(
       value =
           "SELECT COUNT(*) "
               + "FROM post_tag pt "
-              + "JOIN post p ON pt.post_id = p.id "
-              + "WHERE pt.tag_id = :tagId AND p.is_deleted = false",
+              + "WHERE pt.tag_id = :tagId",
       nativeQuery = true)
-  long countPostsByTagIdAndIsDeletedFalse(@Param("tagId") Long tagId);
+  long countPostsByTagId(@Param("tagId") Long tagId);
 }

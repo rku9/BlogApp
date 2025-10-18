@@ -49,23 +49,20 @@ public class CommentService {
     return commentRepository.save(comment);
   }
 
-  /** Soft-delete a single comment by its ID. */
+  /** Hard-delete a single comment by its ID. */
   @Transactional
   public void deleteComment(Long commentId) {
-    // Mark comment deleted
     Comment comment = getCommentById(commentId);
     if (comment != null) {
-      comment.setDeleted(true);
-      commentRepository.save(comment);
+      commentRepository.delete(comment);
     }
   }
 
-  /** Soft-delete all comments for a given post. */
+  /** Hard-delete all comments for a given post. */
   @Transactional
   public void deleteCommentsByPostId(Long postId) {
     Set<Comment> comments = getCommentsByPostId(postId);
-    comments.forEach(c -> c.setDeleted(true));
-    commentRepository.saveAll(comments);
+    commentRepository.deleteAll(comments);
   }
 
   /** Update the content of an existing comment. */

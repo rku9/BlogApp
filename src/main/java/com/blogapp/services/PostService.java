@@ -239,16 +239,19 @@ public class PostService {
     postRepository.save(existingPost);
   }
 
-  /** Soft-delete a post and its comments. */
+  /** Hard-delete a post and its comments. */
   @Transactional
   public void deletePostAndCleanup(Long id) {
     Post post =
         postRepository
             .findById(id)
             .orElseThrow(() -> new NoPostException("Post not found with id: " + id, id));
-    post.setDeleted(true);
+    // Delete associated comments first
     commentService.deleteCommentsByPostId(id);
-    postRepository.save(post);
+    // Delete unused tags
+    tagService.deleteUnusedTags(post.getTags());
+    // Hard delete the post
+    postRepository.delete(post);
   }
 
   private void normalizeFilters(PostParamFilterDto filters) {

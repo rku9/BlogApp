@@ -7,12 +7,10 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
 
 @Getter
 @Setter
 @Entity
-@Where(clause = "is_deleted = false")
 public class Tag extends BaseModel implements Comparable<Tag> {
   @Column(unique = true, nullable = false)
   private String name;

@@ -6,12 +6,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
 
 @Getter
 @Setter
 @Entity
-@Where(clause = "is_deleted=false")
 public class Comment extends BaseModel {
 
   @Column(nullable = false)

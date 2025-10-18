@@ -58,20 +58,20 @@ public class TagService {
   }
 
   /**
-   * Retrieves all non-deleted tags sorted alphabetically.
+   * Retrieves all tags sorted alphabetically.
    *
-   * @return a sorted set of active tags
+   * @return a sorted set of tags
    */
   public Set<Tag> findAllTags() {
-    return new TreeSet<>(tagRepository.findAllByDeletedFalse());
+    return new TreeSet<>(tagRepository.findAll());
   }
 
   @Transactional
   public void deleteUnusedTags(Set<Tag> tags) {
     for (Tag tag : tags) {
-      long count = tagRepository.countPostsByTagIdAndIsDeletedFalse(tag.getId());
+      long count = tagRepository.countPostsByTagId(tag.getId());
       if (count == 0) {
-        tag.setDeleted(true);
+        tagRepository.delete(tag);
       }
     }
   }

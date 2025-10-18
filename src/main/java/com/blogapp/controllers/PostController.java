@@ -208,7 +208,7 @@ public class PostController {
     return postService.editPost(id, postFormDto, authorToSet);
   }
 
-  /** Soft delete a post and redirect to the list page. */
+  /** Delete a post and redirect to the list page. */
   @DeleteMapping("/posts/{id}")
   public String deletePost(
       @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {

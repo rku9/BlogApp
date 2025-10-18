@@ -6,12 +6,10 @@ import java.util.List;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
 
 @Getter
 @Setter
 @Entity
-@Where(clause = "is_deleted=false")
 public class Post extends BaseModel {
   @Column(nullable = false)
   private String title;
