@@ -47,7 +47,7 @@ public class CustomUserDetails implements UserDetails {
 
   @Override
   public boolean isAccountNonLocked() {
-    return !user.isDeleted();
+    return true;
   }
 
   @Override
@@ -57,6 +57,6 @@ public class CustomUserDetails implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return !user.isDeleted();
+    return true;
   }
 }

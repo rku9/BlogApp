@@ -25,7 +25,4 @@ public class BaseModel {
   private Instant createdAt;
 
   @LastModifiedDate private Instant updatedAt;
-
-  @Column(name = "is_deleted", nullable = false)
-  private boolean deleted = false;
 }

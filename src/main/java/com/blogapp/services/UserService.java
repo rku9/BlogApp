@@ -50,10 +50,6 @@ public class UserService {
       throw new IllegalArgumentException("Invalid email or password.");
     }
 
-    if (user.isDeleted()) {
-      throw new IllegalStateException("User account is deactivated. Contact admin to unlock it.");
-    }
-
     return user;
   }
 

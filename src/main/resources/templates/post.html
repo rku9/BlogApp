@@ -27,7 +27,7 @@
       |
     </div>
 
-    <div th:if="${post != null || post.isDeleted() == false}">
+    <div th:if="${post != null}">
       <h1 th:text="${post.getTitle()}">Post Title</h1>
 
       <div>
