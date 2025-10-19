@@ -2,6 +2,8 @@ package com.blogapp.api.controllers;
 
 import com.blogapp.dtos.LoginRequestDto;
 import com.blogapp.dtos.LoginResponseDto;
+import com.blogapp.dtos.SignUpRequestDto;
+import com.blogapp.dtos.SignUpResponseDto;
 import com.blogapp.models.User;
 import com.blogapp.services.UserService;
 import org.springframework.http.HttpStatus;
@@ -42,6 +44,26 @@ public class UserController {
       LoginResponseDto responseDto =
           new LoginResponseDto(null, null, null, null, false, e.getMessage());
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseDto);
+    }
+  }
+
+  @PostMapping("/register")
+  public ResponseEntity<SignUpResponseDto> register(@RequestBody SignUpRequestDto signUpRequestDto) {
+    try {
+      User user =
+          userService.register(
+              signUpRequestDto.getName(),
+              signUpRequestDto.getEmail(),
+              signUpRequestDto.getPassword(),
+              signUpRequestDto.getConfirmPassword(),
+              signUpRequestDto.getUserRole());
+
+      SignUpResponseDto responseDto =
+          new SignUpResponseDto(
+              user.getId(), user.getName(), user.getEmail(), user.getUserRole(), "Registration successful.");
+      return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(e.getMessage());
     }
   }
 }

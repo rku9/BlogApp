@@ -31,18 +31,16 @@ public class Post extends BaseModel {
   @JoinColumn(name = "author_id", nullable = false)
   private User author;
 
-  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Comment> comments;
 
   private Instant publishedAt;
   private boolean isPublished;
 
   public String convertSetOfTagToString(Set<Tag> tagSet) {
-      System.out.println(this.isPublished);
-//      System.out.println(this.get);
-      if (tagSet == null || tagSet.isEmpty()) {
-          return "";
-      }
+    if (tagSet == null || tagSet.isEmpty()) {
+      return "";
+    }
 
     StringBuilder sb = new StringBuilder();
     for (Tag tag : tagSet) {
@@ -51,7 +49,5 @@ public class Post extends BaseModel {
     }
     sb.deleteCharAt(sb.length() - 1);
     return sb.toString();
-
-
   }
 }

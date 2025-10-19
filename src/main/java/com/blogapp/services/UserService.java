@@ -22,7 +22,8 @@ public class UserService {
 
   public User register(
       String name, String email, String password, String confirmPassword, Role userRole) {
-    Optional<User> optionalUser = userRepository.findByEmail(email);
+    String normalizedEmail = email == null ? null : email.trim().toLowerCase();
+    Optional<User> optionalUser = userRepository.findByEmail(normalizedEmail);
     if (optionalUser.isPresent()) {
       return optionalUser.get();
     }
@@ -34,23 +35,29 @@ public class UserService {
     }
     User user = new User();
     user.setName(name);
-    user.setEmail(email);
+    user.setEmail(normalizedEmail);
     user.setPassword(bCryptPasswordEncoder.encode(password));
     user.setUserRole(userRole);
     return userRepository.save(user);
   }
 
   public User login(String email, String passedPassword) {
+    String normalizedEmail = email == null ? null : email.trim().toLowerCase();
     User user =
         userRepository
-            .findByEmail(email)
+            .findByEmail(normalizedEmail)
             .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
 
-    if (!bCryptPasswordEncoder.matches(passedPassword, user.getPassword())) {
-      throw new IllegalArgumentException("Invalid email or password.");
+    if (bCryptPasswordEncoder.matches(passedPassword, user.getPassword())) {
+      return user;
     }
 
-    return user;
+    if (user.getPassword().equals(passedPassword)) {
+      user.setPassword(bCryptPasswordEncoder.encode(passedPassword));
+      return userRepository.save(user);
+    }
+
+    throw new IllegalArgumentException("Invalid email or password.");
   }
 
   public Optional<User> findById(Long id) {

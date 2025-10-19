@@ -2,7 +2,6 @@ package com.blogapp.api.controllers;
 
 import com.blogapp.dtos.CommentResponseDto;
 import com.blogapp.dtos.PostFormDto;
-import com.blogapp.dtos.PostParamFilterDto;
 import com.blogapp.dtos.PostResponseDto;
 import com.blogapp.dtos.TagResponseDto;
 import com.blogapp.dtos.UserResponseDto;
@@ -15,21 +14,21 @@ import com.blogapp.services.PostService;
 import com.blogapp.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,10 +64,46 @@ public class PostController {
 
     @GetMapping
     public Page<PostResponseDto> getAllPosts(
-            @PageableDefault(size = 10, sort = "publishedAt", direction = Sort.Direction.DESC)
-            Pageable pageable,
-            @ModelAttribute PostParamFilterDto postParamFilterDto) {
-        Page<Post> page = postService.getAllPosts(pageable, postParamFilterDto);
+            @RequestParam(name = "start", required = false) Integer start,
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "authorId", required = false) Long authorId,
+            @RequestParam(name = "tagId", required = false) List<Long> tagIds,
+            @RequestParam(name = "order", required = false) String order,
+            @RequestParam(name = "search", required = false) String search) {
+
+        int resolvedLimit = (limit != null && limit > 0) ? limit : 10;
+        int resolvedStart = (start != null && start > 0) ? start : 1;
+        int pageNumber = (resolvedStart - 1) / resolvedLimit;
+
+        Sort.Direction direction = "ASC".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(direction, "publishedAt");
+        PageRequest pageable = PageRequest.of(pageNumber, resolvedLimit, sort);
+
+        List<String> authorNames = null;
+        if (authorId != null) {
+            User author =
+                    userService
+                            .findById(authorId)
+                            .orElseThrow(
+                                    () ->
+                                            new ResponseStatusException(
+                                                    HttpStatus.BAD_REQUEST,
+                                                    "Author not found with id: " + authorId));
+            authorNames = List.of(author.getName());
+        }
+
+        List<Long> sanitizedTagIds = null;
+        if (tagIds != null && !tagIds.isEmpty()) {
+            sanitizedTagIds = tagIds.stream().filter(id -> id != null).distinct().collect(Collectors.toList());
+            if (sanitizedTagIds.isEmpty()) {
+                sanitizedTagIds = null;
+            }
+        }
+
+        String sanitizedSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : "";
+
+        Page<Post> page =
+                postService.searchPosts(authorNames, sanitizedTagIds, sanitizedSearch, null, null, pageable);
         return page.map(this::toPostResponse);
     }
 

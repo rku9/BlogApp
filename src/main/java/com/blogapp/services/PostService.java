@@ -246,11 +246,9 @@ public class PostService {
         postRepository
             .findById(id)
             .orElseThrow(() -> new NoPostException("Post not found with id: " + id, id));
-    // Delete associated comments first
-    commentService.deleteCommentsByPostId(id);
-    // Delete unused tags
+    // Delete unused tags before deleting post
     tagService.deleteUnusedTags(post.getTags());
-    // Hard delete the post
+    // Hard delete the post (cascade will auto-delete comments)
     postRepository.delete(post);
   }
 

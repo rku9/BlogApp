@@ -42,10 +42,6 @@ public class CommentService {
     comment.setPost(post);
     comment.setUser(user);
 
-    // Optional: Keep in-memory collection synchronized (if applicable)
-    if (post.getComments() != null) {
-      post.getComments().add(comment);
-    }
     return commentRepository.save(comment);
   }
 
