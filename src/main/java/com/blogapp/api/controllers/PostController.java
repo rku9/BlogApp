@@ -110,10 +110,6 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostResponseDto> createPost(@RequestBody PostFormDto postFormDto,
                                                       @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         User author = resolveAuthorForRequest(postFormDto, userDetails);
         Post post = new Post();
         post.setTitle(postFormDto.getTitle());
@@ -132,10 +128,6 @@ public class PostController {
     public ResponseEntity<PostResponseDto> updatePost(@PathVariable long id,
                                                       @RequestBody PostFormDto postFormDto,
                                                       @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         Post post =
                 postService
                         .getPost(id)
@@ -184,10 +176,6 @@ public class PostController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable long id,
                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         Post post =
                 postService
                         .getPost(id)

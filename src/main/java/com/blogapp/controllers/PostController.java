@@ -93,9 +93,6 @@ public class PostController {
   @GetMapping("/posts/new")
   public String showNewPostForm(
       Model model, @AuthenticationPrincipal CustomUserDetails userDetails) {
-    if (userDetails == null) {
-      return "redirect:/login";
-    }
 
     PostFormDto postFormDto = (PostFormDto) model.getAttribute("postFormDto");
     if (postFormDto == null) {
@@ -121,9 +118,6 @@ public class PostController {
       @ModelAttribute PostFormDto postFormDto,
       @RequestParam("tagListString") String tagListString,
       @AuthenticationPrincipal CustomUserDetails userDetails) {
-    if (userDetails == null) {
-      return "redirect:/login";
-    }
 
     User author = resolveAuthorForRequest(postFormDto, userDetails);
     return postService.savePost(postFormDto, tagListString, author);
@@ -132,12 +126,9 @@ public class PostController {
   /** Present the edit form populated with an existing post. */
   @GetMapping("/posts/{id}/edit")
   public String showEditPostForm(
-      @PathVariable Long id,
-      Model model,
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
-    if (userDetails == null) {
-      return "redirect:/login";
-    }
+          @PathVariable Long id,
+          Model model,
+          @AuthenticationPrincipal CustomUserDetails userDetails, RedirectAttributes redirectAttributes) {
 
     Post post =
         postService
@@ -178,9 +169,6 @@ public class PostController {
       @PathVariable Long id,
       @ModelAttribute PostFormDto postFormDto,
       @AuthenticationPrincipal CustomUserDetails userDetails) {
-    if (userDetails == null) {
-      return "redirect:/login";
-    }
 
     Post post =
         postService
@@ -212,9 +200,6 @@ public class PostController {
   @DeleteMapping("/posts/{id}")
   public String deletePost(
       @PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails) {
-    if (userDetails == null) {
-      return "redirect:/login";
-    }
 
     Post post =
         postService

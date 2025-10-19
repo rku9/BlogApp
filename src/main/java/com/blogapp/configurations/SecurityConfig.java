@@ -51,6 +51,10 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/posts/*/comments").permitAll()
             .requestMatchers("/", "/login", "/register", "/css/**", "/js/**").permitAll()
+            // Protect specific GET pages that should require authentication
+            .requestMatchers(HttpMethod.GET, "/posts/new").authenticated()
+            .requestMatchers(HttpMethod.GET, "/posts/*/edit").authenticated()
+            .requestMatchers(HttpMethod.GET, "/posts/*/comments/*/edit").authenticated()
             .requestMatchers(HttpMethod.GET, "/posts/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/posts/*/comments").permitAll()
             .anyRequest().authenticated())
