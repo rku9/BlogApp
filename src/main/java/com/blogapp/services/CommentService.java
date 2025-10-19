@@ -61,14 +61,24 @@ public class CommentService {
     commentRepository.deleteAll(comments);
   }
 
-  /** Update the content of an existing comment. */
+  /** Partially update an existing comment's fields. */
   @Transactional
-  public void updateCommentContent(Long commentId, String content) {
+  public void updateComment(Long commentId, String commentContent, String commentWriterName, String email) {
     Comment comment =
         commentRepository
             .findById(commentId)
             .orElseThrow(() -> new RuntimeException("Comment not found with id: " + commentId));
-    comment.setCommentContent(content);
+
+    if (commentContent != null) {
+      comment.setCommentContent(commentContent);
+    }
+    if (commentWriterName != null) {
+      comment.setCommentWriterName(commentWriterName);
+    }
+    if (email != null) {
+      comment.setEmail(email);
+    }
+
     commentRepository.save(comment);
   }
 }

@@ -31,7 +31,7 @@ public class Post extends BaseModel {
   @JoinColumn(name = "author_id", nullable = false)
   private User author;
 
-  @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(mappedBy = "post", cascade = CascadeType.REMOVE, orphanRemoval = true)
   private List<Comment> comments;
 
   private Instant publishedAt;

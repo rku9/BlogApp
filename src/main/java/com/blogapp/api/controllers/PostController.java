@@ -164,10 +164,13 @@ public class PostController {
             tagListString = post.convertSetOfTagToString(post.getTags());
         }
 
+        String titleToSet = postFormDto.getTitle() != null ? postFormDto.getTitle() : post.getTitle();
+        String contentToSet = postFormDto.getContent() != null ? postFormDto.getContent() : post.getContent();
+
         postService.updatePostWithTags(
                 id,
-                postFormDto.getTitle(),
-                postFormDto.getContent(),
+                titleToSet,
+                contentToSet,
                 tagListString,
                 authorToSet);
 

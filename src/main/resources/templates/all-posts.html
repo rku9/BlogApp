@@ -43,13 +43,19 @@
 <!--          <strong sec:authentication="principal.password">User</strong>-->
       </span>
       <span sec:authorize="!isAuthenticated()" style="display: inline-flex; gap: 8px;">
-        <a th:href="@{/login}">Login</a>
-        <a th:href="@{/register}">Register</a>
+        <form th:action="@{/login}" method="get" style="display:inline;">
+          <button type="submit">Login</button>
+        </form>
+        <form th:action="@{/register}" method="get" style="display:inline;">
+          <button type="submit">Register</button>
+        </form>
       </span>
       <span sec:authorize="isAuthenticated()">
-        <a th:href="@{/posts/new}" sec:authorize="hasAnyAuthority('ROLE_AUTHOR','ROLE_ADMIN')">New Post</a>
+        <form th:action="@{/posts/new}" method="get" sec:authorize="hasAnyAuthority('ROLE_AUTHOR','ROLE_ADMIN')" style="display:inline;">
+          <button type="submit">New Post</button>
+        </form>
         |
-        <form th:action="@{/logout}" method="post">
+        <form th:action="@{/logout}" method="post" style="display:inline;">
           <button type="submit">Logout</button>
         </form>
       </span>

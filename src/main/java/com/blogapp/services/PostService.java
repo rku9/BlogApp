@@ -223,19 +223,28 @@ public class PostService {
             .orElseThrow(() -> new NoPostException("Post not found", postId));
 
     Set<Tag> oldTags = existingPost.getTags();
-    existingPost.setTitle(title);
-    existingPost.setContent(content);
+
+    if (title != null) {
+      existingPost.setTitle(title);
+    }
+    if (content != null) {
+      existingPost.setContent(content);
+    }
     if (newAuthor != null) {
       existingPost.setAuthor(newAuthor);
     }
-    Set<Tag> tags = tagService.saveTags(tagListString);
-    existingPost.setTags(tags);
 
-    for (Tag tag : tags) {
-      tag.getPosts().add(existingPost);
+    if (tagListString != null) {
+      Set<Tag> tags = tagService.saveTags(tagListString);
+      existingPost.setTags(tags);
+
+      for (Tag tag : tags) {
+        tag.getPosts().add(existingPost);
+      }
+
+      tagService.deleteUnusedTags(oldTags);
     }
 
-    tagService.deleteUnusedTags(oldTags);
     postRepository.save(existingPost);
   }
 

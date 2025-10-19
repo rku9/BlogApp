@@ -174,7 +174,7 @@ public class CommentController {
       throw new RuntimeException("Comment with id " + commentId + " not found!");
     }
     // Update only the content
-    commentService.updateCommentContent(commentId, updatedComment.getCommentContent());
+    commentService.updateComment(commentId, updatedComment.getCommentContent(), null, null);
 
     return "redirect:/posts/" + postId + "/comments";
   }

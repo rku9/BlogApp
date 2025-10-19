@@ -15,10 +15,14 @@
         <strong sec:authentication="principal.name">User</strong>
       </span>
       <span sec:authorize="!isAuthenticated()">
-        <a th:href="@{/login}">Login</a>
+        <form th:action="@{/login}" method="get" style="display:inline;">
+          <button type="submit">Login</button>
+        </form>
       </span>
       <span sec:authorize="isAuthenticated()">
-        <a th:href="@{/posts/new}" sec:authorize="hasAnyAuthority('ROLE_AUTHOR','ROLE_ADMIN')">New Post</a>
+        <form th:action="@{/posts/new}" method="get" sec:authorize="hasAnyAuthority('ROLE_AUTHOR','ROLE_ADMIN')" style="display:inline;">
+          <button type="submit">New Post</button>
+        </form>
         |
         <form th:action="@{/logout}" method="post" style="display:inline;">
           <button type="submit">Logout</button>

@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -79,14 +80,25 @@ public class CommentController {
 
         User currentUser = userDetails != null ? userDetails.getUser() : null;
 
+        if (!StringUtils.hasText(request.getCommentContent())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        if (currentUser == null) {
+            if (!StringUtils.hasText(request.getCommentWriterName())
+                    || !StringUtils.hasText(request.getEmail())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
+        }
+
         Comment comment = new Comment();
-        comment.setCommentContent(request.getCommentContent());
+        comment.setCommentContent(request.getCommentContent().trim());
         if (currentUser != null) {
             comment.setCommentWriterName(currentUser.getName());
             comment.setEmail(currentUser.getEmail());
         } else {
-            comment.setCommentWriterName(request.getCommentWriterName());
-            comment.setEmail(request.getEmail());
+            comment.setCommentWriterName(request.getCommentWriterName().trim());
+            comment.setEmail(request.getEmail().trim());
         }
 
         Comment saved = commentService.saveComment(comment, postId, currentUser);
@@ -112,7 +124,13 @@ public class CommentController {
             throw new NoPostException("Comment with id " + commentId + " not found for the specified post", commentId);
         }
 
-        commentService.updateCommentContent(commentId, request.getCommentContent());
+        String commentContentToSet =
+                request.getCommentContent() != null ? request.getCommentContent() : existingComment.getCommentContent();
+        String commentWriterNameToSet =
+                request.getCommentWriterName() != null ? request.getCommentWriterName() : existingComment.getCommentWriterName();
+        String emailToSet = request.getEmail() != null ? request.getEmail() : existingComment.getEmail();
+
+        commentService.updateComment(commentId, commentContentToSet, commentWriterNameToSet, emailToSet);
         Comment updated = commentService.getCommentById(commentId);
         return ResponseEntity.ok(toCommentResponse(updated));
     }
